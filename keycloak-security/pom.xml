@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.inn</groupId>
+    <artifactId>OBF</artifactId>
+    <version>1.0</version>
+  </parent>
+  <groupId>com.inn</groupId>
+  <artifactId>keycloak-security</artifactId>
+  <version>1.0</version>
+  <name>keycloak-security</name>
+  <url>http://maven.apache.org</url>
+  <dependencies>
+    <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-spring-boot-starter</artifactId>
+        </dependency>
+         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+    <groupId>org.springframework.session</groupId>
+    <artifactId>spring-session-data-redis</artifactId>
+    <version>2.2.0.RELEASE</version>
+</dependency>
+		<dependency>
+    <groupId>io.lettuce</groupId>
+    <artifactId>lettuce-core</artifactId>
+    <version>2.2.0.RELEASE</version>
+</dependency> 
+  </dependencies>
+  
+  
+  
+  <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.keycloak.bom</groupId>
+                <artifactId>keycloak-adapter-bom</artifactId>
+                <version>${keycloak-adapter-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
+     <properties>
+        <keycloak-adapter-bom.version>6.0.1</keycloak-adapter-bom.version>
+         
+    </properties>
+</project>

@@ -1,0 +1,46 @@
+apiVersion: apps/v1 
+kind: Deployment 
+metadata: 
+  name: obf-ui 
+  namespace: efk
+spec: 
+  selector: 
+    matchLabels: 
+      app: obf-ui 
+  replicas: 1
+  template: 
+    metadata: 
+      labels: 
+        app: obf-ui 
+    spec: 
+      containers: 
+      - name: obf-container 
+        image: obf-ui:1 
+        ports: 
+        - containerPort: 80
+        env:
+        - name: KEYCLOAK_URL
+          value: "http://192.168.105.124:30202/auth" 
+        - name: KEYCLOAK_REALM
+          value: "activiti"
+        - name: KEYCLOAK_CLIENTID
+          value: "activiti" 
+        - name: OBF_HOST_BACKEND
+          value: "http://192.168.105.124:31595"
+        - name: OBF_HOST_KIBANA
+          value: "http://34.85.46.112:30601"
+---  
+kind: Service 
+apiVersion: v1 
+metadata: 
+  name: obf-ui 
+  namespace: efk
+spec: 
+  selector: 
+    app: obf-ui 
+  ports: 
+  - protocol: TCP 
+    port: 80 
+    targetPort: 80 
+    nodePort: 31000  
+  type: NodePort

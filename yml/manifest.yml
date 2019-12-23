@@ -1,0 +1,197 @@
+name: OBF
+description: OBF
+icon: rusdn.png
+snapshot: enabled
+clone: enabled
+clonemode: unfenced
+roles: [Database_Container, Distributed_Cache, Centralized_IAM_Container, Backend_Container,  Frontend_Container]
+
+Database_Container:
+    name: Database_Container
+    description: Runs mysql database server
+    commandline: "--default-authentication-plugin=mysql_native_password"
+    service_ports: [3306]
+    norootfs: true
+    image:
+        name: mysql
+        engine: docker
+        version: "8.0"
+    storage:
+        - type: data
+          media: hdd
+          path: "/var/lib/mysql"
+          size: 10G
+    compute:
+        memory: 4G
+        cpu:
+            reserve: false
+            cores: 4
+    env:
+        MYSQL_ROOT_PASSWORD:
+            type: password
+            value: "robin123"
+        MYSQL_DATABASE: keycloak
+        MYSQL_USER: keycloak
+        MYSQL_PASSWORD:
+            type: password
+            value: "robin123"
+    vnodehooks:
+        postcreate: bash mysql_postcreate.sh
+        poststart: bash check_mysql
+        postgrow: bash check_mysql
+        postclone: bash check_mysql
+        presnapshot: bash quiesce.sh
+        postsnapshot: bash unquiesce.sh
+        postrollback: bash check_mysql
+
+Distributed_Cache:
+    name: Distributed_Cache
+    description: Runs Redis server
+    commandline: "-W"
+    scaleout: disabled
+    norootfs: true
+    multinoode: true
+    image:
+        name: redis
+        engine: docker
+        version: "5.0.5"
+    entrypoint: redis-server --appendonly yes
+    compute:
+        memory: 2G
+        cpu:
+          reserve: false
+          cores: 1
+    storage:
+        - type: data1
+          media: hdd
+          path: "/var/lib/redis"
+          size: 10G
+        - type: data2
+          media: hdd
+          path: "/data"
+          size: 10G
+    service_ports: [6379]
+
+Centralized_IAM_Container:
+    name: Centralized_IAM_Container
+    description: Runs keycloak server
+    norootfs: true
+    service_ports: [8080]
+    depends: [Database_Container]
+    image:
+        name: tareshsoni/custom-keycloak   
+        engine: docker
+        version: "v2.6"
+    readinessProbe:
+        httpGet:
+            path: /auth
+            port: 8080
+    compute:
+        memory: 2G
+        cpu:
+          reserve: false
+          cores: 1            
+    env:
+        KEYCLOAK_LOGLEVEL: "WARN"
+        ROOT_LOGLEVEL: "WARN"
+        KEYCLOAK_USER: "admin"
+        DB_VENDOR: "MYSQL"
+        DB_ADDR: "{{ROLES.Database_Container.VNODES[0].IP_ADDRESS}}"
+        DB_USER: "keycloak"
+        DB_PASSWORD:
+            type: password
+            value: "robin123"
+        JGROUPS_DISCOVERY_PROTOCOL: "kubernetes.KUBE_PING"
+        JGROUPS_DISCOVERY_PROPERTIES: "port_range=0,dump_requests=true"
+        PROXY_ADDRESS_FORWARDING: "true"
+        connectTimeout: "600000"
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD:
+            type: password
+            value: "admin"
+        remoteTimeout: "600000"
+        DOMAIN_NAME: "{{ROLES.Frontend_Container.ENV.DOMAIN_NAME}}"
+
+Backend_Container:
+    name: Backend_Container
+    description: Runs Ticket management
+    norootfs: true
+    service_ports: [8082]
+    depends: [Database_Container,Centralized_IAM_Container,Distributed_Cache]
+    image:
+        name: tareshsoni/rusdn-service
+        engine: docker
+        version: "v2.01"
+    compute:
+        memory: 6G
+        cpu:
+          reserve: false
+          cores: 4        
+    env:
+        MYSQL_DATABASE_URL: "jdbc:mysql://{{ROLES.Database_Container.VNODES[0].IP_ADDRESS}}:3306/rusdn"
+        KEYCLOAK_AUTH_SERVER_URL: "https://{{ROLES.Frontend_Container.ENV.DOMAIN_NAME}}/auth"
+        CLIENT_NAME: "activiti"
+        CLIENT_ID: "activiti"
+        CLIENT_SECRET: "e3f519b4-0272-4261-9912-8b7453ac4ecd"
+        REDIS_HOST: "{{ROLES.Distributed_Cache.VNODES[0].IP_ADDRESS}}"
+        REDIS_PORT: "6379"
+        BASE_WAR_DIRECTORY: "/home/cloud/ticket-management/uploadFile"
+        KEYCLOAK_REALM: "activiti"
+        SERVER_PORT: "8082"
+        BSS_API_HOST: "http://60.254.111.202:34569"
+        GATWAY_CONTEXT: "apigateway"
+        KEYCLOAK_RESOURCE: "activiti"
+        RUSDN_CORE_CONTEXT: "/RUSDN/"
+        NET_VELOCITY_API_URL: "https://stg-fos.rmb-ss.jp"
+        RAD_COM_API_URL: "http://60.254.111.202:34569"
+        PROCESS_ENGINE_URL: "http://192.168.105.128:8180/rest/engine/default/"
+        TICKET_PROCESS_DEFINITION_NAME: ""
+        TICKET_PROCESS_DEFINITION_VERSION: ""
+        ROBIN_HOST: "https://35.194.111.39"
+        ROBIN_PORT: "39451"
+        ROBIN_SERVER_LOGIN_USERNAME: "robin"
+        ROBIN_SERVER_LOGIN_PASSWORD: 
+            type: password
+            value: "Robin123"
+        ROBIN_SERVER_LOGIN_URL: "/api/v5/robin_server/login"
+        ROBIN_SERVER_CREATE_APP_URL: "/api/v3/robin_server/apps"
+        ROBIN_SERVER_CHECK_APP_STATUS_URL: "/api/v3/robin_server/jobs/"
+        ROBIN_SERVER_GET_SERVICE_APP_URL: "/api/v3/robin_server/apps/APPLICATION_NAME?info=true"
+        ROBIN_SERVER_JSON_FILE_RELATIVE_PATH: "ccv8.json"
+        ORGANISATION: "organisation"
+        MYSQL_DATABASE_USERNAME: rusdn
+        MYSQL_DATABASE_PASSWORD: 
+            type: password
+            value: "RUSDN#123DB"
+
+
+Frontend_Container:
+    name: Frontend_Container
+    description: Runs RUSDN UI
+    norootfs: true
+    service_ports: [80]
+    depends: [Centralized_IAM_Container]
+    image:
+        name: tareshsoni/rusdn
+        engine: docker
+        version: "v3.8"
+    compute:
+        memory: 2G
+        cpu:
+          reserve: false
+          cores: 2        
+    env:
+      KEYCLOAK_URL: "https://{{ROLES.Frontend_Container.ENV.DOMAIN_NAME}}/auth"
+      KEYCLOAK_CLIENTID: "activiti"
+      KEYCLOAK_CLIENTID: "activiti"
+      RUSDN_SERVICE_URL: "https://{{ROLES.Frontend_Container.ENV.DOMAIN_NAME}}/RUSDN"
+      TCM_HOST: "https://{{ROLES.Frontend_Container.ENV.DOMAIN_NAME}}/ticketManagement"
+      TWITT_HOST: "https://{{ROLES.Frontend_Container.ENV.DOMAIN_NAME}}/ticketManagement"
+      DOMAIN_NAME: "{{APP_NAME}}.rusdn-https.linux-networking.rocks"
+
+apphooks:
+    validate: python3.4 validate_template.py
+    postcreate: python3.4 postcreate.py
+    postdestroy: python3.4 postdestroy.py
+    health: python3.4 health.py
+    info: python3.4 app_info.py

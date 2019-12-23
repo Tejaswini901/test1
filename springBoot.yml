@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: obfbackend
+  namespace: newproject
+  labels:
+    app: obfbackend
+    service: obfbackend
+spec:
+  type: NodePort
+  ports:
+  - port: 8181
+    name: http
+    nodePort: 31595
+  selector:
+    app: obfbackend
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obfbackend
+  namespace: newproject
+  labels:
+    app: obfbackend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: obfbackend
+  template:
+    metadata:
+      labels:
+        app: obfbackend
+    spec:
+      #nodeName: robin-ha-1
+      containers:
+      - name: obfbackend
+        image: usernew/obfbackend:1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8181
+        env:
+        - name: MYSQL_DATABASE_URL
+          value: "jdbc:mysql://mysql:3306/obf?autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&allowMultiQueries=true&useSSL=false"
+        - name: MYSQL_DATABASE_USERNAME
+          value: "root"
+        - name: MYSQL_DATABASE_PASSWORD
+          value: "root"
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: KEYCLOAK_AUTH_SERVER_URL
+          value: "http://http://35.225.3.232/auth"
+        - name: SERVER_PORT
+          value: "8080"
+        - name: LOG_FILE_PATH
+          value: "/opt/logFile/"
+        - name: KEYCLOAK_RESOURCE
+          value: "Demo"
+        - name: KEYCLOAK_REALM
+          value: "maaster"
+        - name: LOG_FILE_DAYS
+          value: "20"
+        volumeMounts:
+        - mountPath: "/opt/logFile/"
+          name: log-file-directory
+      volumes:
+       - name: log-file-directory
+         hostPath:
+          path: "/home/ist/DOCUMENTS/logfileDoc/"

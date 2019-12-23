@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.inn</groupId>
+    <artifactId>OBF</artifactId>
+    <version>1.0</version>
+  </parent>
+  <groupId>com.inn</groupId>
+  <artifactId>obf</artifactId>
+  <version>1.0</version>
+  <name>obf</name>
+  <url>http://maven.apache.org</url>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+            <groupId>com.inn</groupId>
+            <artifactId>http-core</artifactId>
+            <version>1.0</version>
+        </dependency>
+        
+         
+<dependency>
+		  <groupId>org.springframework.integration</groupId>
+		  <artifactId>spring-integration-test</artifactId>
+		  <version>5.1.7.RELEASE</version>
+		  <scope>test</scope>
+	  </dependency>
+	  <dependency>
+		  <groupId>org.springframework.boot</groupId>
+		  <artifactId>spring-boot-starter-test</artifactId>
+		  <scope>test</scope>
+	  </dependency>
+	   <dependency>
+            <groupId>com.inn</groupId>
+            <artifactId>keycloak-security</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-admin-client</artifactId>
+			<version>7.0.0</version>
+		</dependency>
+		
+  </dependencies>
+  <build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
